@@ -118,10 +118,98 @@ WHERE Movies.Id = Projections.Id
 GROUP BY Movies.Director;
 
 /* 19- Per ogni film di S.Spielberg, il titolo del film, il numero totale di proiezioni a Pisa e l’incasso totale */
-SELECT Movies.Title, SUM(Projections.Profit), (SELECT COUNT(*) FROM Movies, Projections, Theatres WHERE Movies.Id = Projections.IdMovie AND Projections.IdTheatre = Theatres.Id AND Movies.Director = 'Steven Spielberg' AND Theatres.City = 'Pisa')
+SELECT Movies.Title, COUNT(*) AS Projections, SUM(Projections.Profit) AS Profit
 FROM Movies, Projections, Theatres
 WHERE Movies.Id = Projections.IdMovie
 AND Projections.IdTheatre = Theatres.Id
 AND Movies.Director = 'Steven Spielberg'
-GROUP BY Movies.Title;
+AND Theatres.City = 'Pisa'
+GROUP BY Movies.Id, Movies.Title;
 
+/* 20- Per ogni regista e per ogni attore, il numero di film del regista con l’attore */
+SELECT Movies.Director, Actors.Name AS Actor, COUNT(*) AS Movie_count
+FROM Movies, Plays, Actors
+WHERE Movies.Id = Plays.IdMovie
+AND Plays.IdActor = Actors.Id
+GROUP BY Movies.Director, Actors.Id, Actors.Name;
+
+/* 21- Il regista ed il titolo dei film in cui recitano meno di 6 attori */
+SELECT Movies.Director, Movies.Title
+FROM Movies, Plays
+WHERE Movies.Id = Plays.IdMovie
+GROUP BY Movies.Id, Movies.Director, Movies.Title
+HAVING COUNT(*) < 6;
+
+/* 21 ********* */
+SELECT Movies.Director, Movies.Title
+FROM Movies
+WHERE 6 > (SELECT COUNT(*) FROM Plays WHERE Plays.IdMovie = Movies.Id);
+
+/* 22- Per ogni film prodotto dopo il 2000, il codice, il titolo e l’incasso totale di tutte le sue proiezioni */
+SELECT Movies.Id, Movies.Title, SUM(Projections.Profit) AS Profit
+FROM Movies, Projections
+WHERE Movies.Id = Projections.IdMovie
+AND Movies.ProductionDate >= '2000/1/1'
+GROUP BY Movies.Id, Movies.Title;
+
+/* 23 - Il numero di attori dei film in cui appaiono solo attori nati prima del 1970 */
+SELECT Movies.Title, COUNT(Plays.IdActor) AS Actors_count
+FROM Movies, Plays, Actors
+WHERE Movies.Id = Plays.IdMovie
+AND Plays.IdActor = Actors.Id
+GROUP BY Movies.Id, Movies.Title
+HAVING MAX(Actors.BirthDate) < '1970/1/1';
+
+/* 24- Per ogni film di fantascienza, il titolo e l’incasso totale di tutte le sue proiezioni */
+SELECT Movies.Title, SUM(Projections.Profit) AS Profit
+FROM Movies, Projections
+WHERE Movies.Id = Projections.IdMovie
+AND Movies.Genre = 'Sci-Fi'
+GROUP BY Movies.Id, Movies.Title;
+
+/* 25- Per ogni film di fantascienza il titolo e l’incasso totale di tutte le sue proiezioni successive al 1/1/01 */
+SELECT Movies.Title, SUM(Projections.Profit)
+FROM Movies, Projections
+WHERE Movies.Id = Projections.IdMovie
+AND Projections.[Date] > '2001/1/1'
+GROUP BY Movies.Id, Movies.Title;
+
+/* 26- Per ogni film di fantascienza che non è mai stato proiettato prima del 1/1/01 il titolo e l’incasso totale di tutte le sue proiezioni */
+SELECT Movies.Title, SUM(Projections.Profit) AS Profit
+FROM Movies, Projections
+WHERE Movies.Id = Projections.IdMovie
+GROUP BY Movies.Id, Movies.Title
+HAVING MIN(Projections.[Date]) >= '2001/1/1';
+
+/* 27- Per ogni sala di Pisa, che nel mese di gennaio 2005 ha incassato più di 20000 €, il nome della sala e l’incasso totale (sempre del mese di gennaio 2005) */
+SELECT Theatres.[Name], SUM(Projections.Profit) AS Profit
+FROM Theatres, Projections
+WHERE Theatres.Id = Projections.IdTheatre
+AND Projections.[Date] BETWEEN '2005/1/1' AND '2005/1/31'
+GROUP BY Theatres.Id, Theatres.[Name]
+HAVING SUM(Projections.Profit) > 20000;
+
+/* 28- I titoli dei film che non sono mai stati proiettati a Pisa */
+SELECT *
+FROM Movies
+WHERE NOT EXISTS (SELECT *
+				  FROM Projections, Theatres
+				  WHERE Projections.IdTheatre = Theatres.Id
+				  AND Movies.Id = Projections.IdMovie
+				  AND Theatres.City = 'Pisa')
+
+/* 28 ********* */
+SELECT *
+FROM Movies
+WHERE 'Pisa' NOT IN (SELECT Theatres.City
+					 FROM Projections, Theatres
+					 WHERE Projections.IdTheatre = Theatres.Id
+					 AND Projections.IdMovie = Movies.Id)
+
+/* 29- I titoli dei film che sono stati proiettati solo a Pisa */
+SELECT *
+FROM Movies
+WHERE 'Pisa' = ALL (SELECT Theatres.City
+					 FROM Projections, Theatres
+					 WHERE Projections.IdTheatre = Theatres.Id
+					 AND Projections.IdMovie <> Movies.Id)
