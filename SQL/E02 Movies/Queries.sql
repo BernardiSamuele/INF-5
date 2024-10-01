@@ -196,7 +196,7 @@ WHERE NOT EXISTS (SELECT *
 				  FROM Projections, Theatres
 				  WHERE Projections.IdTheatre = Theatres.Id
 				  AND Movies.Id = Projections.IdMovie
-				  AND Theatres.City = 'Pisa')
+				  AND Theatres.City = 'Pisa');
 
 /* 28 ********* */
 SELECT *
@@ -204,7 +204,7 @@ FROM Movies
 WHERE 'Pisa' NOT IN (SELECT Theatres.City
 					 FROM Projections, Theatres
 					 WHERE Projections.IdTheatre = Theatres.Id
-					 AND Projections.IdMovie = Movies.Id)
+					 AND Projections.IdMovie = Movies.Id);
 
 /* 29- I titoli dei film che sono stati proiettati solo a Pisa */
 SELECT *
@@ -212,4 +212,54 @@ FROM Movies
 WHERE 'Pisa' = ALL (SELECT Theatres.City
 					 FROM Projections, Theatres
 					 WHERE Projections.IdTheatre = Theatres.Id
-					 AND Projections.IdMovie <> Movies.Id)
+					 AND Projections.IdMovie = Movies.Id);
+
+/* 32- Il nome degli attori italiani che non hanno mai recitato in film di Fellini */
+SELECT *
+FROM Actors AS A1
+WHERE A1.Country = 'Italy'
+AND A1.Id NOT IN (SELECT A2.Id
+				  FROM Actors AS A2, Plays, Movies
+				  WHERE A2.Id = Plays.IdActor
+				  AND Plays.IdMovie = Movies.Id
+				  AND Movies.Director = 'Federico Fellini'
+				  AND A1.Id = A2.Id);
+
+/* 33- Il titolo dei film di Fellini in cui non recitano attori italiani */
+SELECT *
+FROM Movies AS M1
+WHERE M1.Director = 'Federico Fellini'
+AND NOT EXISTS(SELECT *
+				 FROM Movies AS M2, Plays, Actors
+				 WHERE M2.Id = Plays.IdMovie
+				 AND Plays.IdActor = Actors.Id
+				 AND Actors.Country = 'Italy'
+				 AND M1.Id = M2.Id);
+
+/* 34- Il titolo dei film senza attori */
+SELECT Movies.Title
+FROM Movies LEFT JOIN Plays ON Movies.Id = Plays.IdMovie
+GROUP BY Movies.Id, Movies.Title
+HAVING COUNT(Plays.IdActor) = 0;
+
+/* 35- Gli attori che prima del 1960 hanno recitato solo nei film di Fellini */
+SELECT *
+FROM Actors AS A1
+WHERE NOT EXISTS (SELECT *
+				  FROM Movies, Plays, Actors AS A2
+				  WHERE Movies.Id = Plays.IdMovie
+				  AND Plays.IdActor = A2.Id
+				  AND Movies.ProductionDate <= '1960/1/1'
+				  AND Movies.Director <> 'Federico Fellini'
+				  AND A1.Id = A2.Id);
+
+/* 36- Gli attori che hanno recitato in film di Fellini solo prima del 1960 */
+SELECT *
+FROM Actors AS A1
+WHERE NOT EXISTS (SELECT *
+				  FROM Movies, Plays, Actors AS A2
+				  WHERE Movies.Id = Plays.IdMovie
+				  AND Plays.IdActor = A2.Id
+				  AND Movies.ProductionDate > '1960/1/1'
+				  AND Movies.Director = 'Federico Fellini'
+				  AND A1.Id = A2.Id);
