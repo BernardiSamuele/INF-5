@@ -1,0 +1,2 @@
+C:\Users\s.bernardi.2625\Desktop\INF-5\ASP DOTNET\Auto\Auto\obj\Debug\Auto.csproj.AssemblyReference.cache
+C:\Users\s.bernardi.2625\Desktop\INF-5\ASP DOTNET\Auto\Auto\obj\Debug\Auto.csproj.CoreCompileInputs.cache
